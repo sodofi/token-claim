@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import TokenClaimer from '../components/TokenClaimer';
+import SimpleTokenClaimer from '../components/SimpleTokenClaimer';
 
 export default function Home() {
   const [userAddress, setUserAddress] = useState('');
@@ -35,7 +35,7 @@ export default function Home() {
           </p>
         </div>
         
-        <TokenClaimer />
+        <SimpleTokenClaimer />
         
         <div className="mt-12 text-center">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
@@ -59,10 +59,10 @@ export default function Home() {
                   2
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">
-                  Check Eligibility
+                  Verify Humanity
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 text-sm">
-                  Each wallet can claim tokens only once
+                  Use Self Protocol to prove you're human and prevent bot abuse
                 </p>
               </div>
               <div className="space-y-2">
@@ -73,7 +73,7 @@ export default function Home() {
                   Claim Tokens
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 text-sm">
-                  Click claim to receive your free tokens
+                  Once verified, claim your free tokens (once per wallet)
                 </p>
               </div>
             </div>
