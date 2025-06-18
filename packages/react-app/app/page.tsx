@@ -31,7 +31,7 @@ export default function Home() {
             Celo Token Claimer
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Connect your wallet and claim your free tokens on the Celo Alfajores testnet
+            Verify your humanity with Self Protocol and claim your free tokens on the Celo Alfajores testnet
           </p>
         </div>
         
@@ -42,7 +42,7 @@ export default function Home() {
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
               How it works
             </h2>
-            <div className="grid md:grid-cols-3 gap-6 text-left">
+            <div className="grid md:grid-cols-4 gap-6 text-left">
               <div className="space-y-2">
                 <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
                   1
@@ -55,8 +55,19 @@ export default function Home() {
                 </p>
               </div>
               <div className="space-y-2">
-                <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
+                <div className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-bold">
                   2
+                </div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Verify Humanity
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm">
+                  Use Self Protocol to prove you're a real human
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold">
+                  3
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">
                   Check Eligibility
@@ -66,8 +77,8 @@ export default function Home() {
                 </p>
               </div>
               <div className="space-y-2">
-                <div className="w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                  3
+                <div className="w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center font-bold">
+                  4
                 </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white">
                   Claim Tokens

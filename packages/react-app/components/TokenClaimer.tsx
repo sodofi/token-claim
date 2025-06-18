@@ -7,6 +7,7 @@ import { Avatar, Connect, Name, Wallet } from '@composer-kit/ui/wallet';
 import { Transaction, TransactionButton, TransactionStatus } from '@composer-kit/ui/transaction';
 import { Address } from '@composer-kit/ui/address';
 import type { Abi } from 'viem';
+import SelfVerification from './SelfVerification';
 
 // Import the ABI (this will be generated after contract compilation)
 import ClaimTokenABI from '../abis/ClaimToken.json';
@@ -25,6 +26,8 @@ export default function TokenClaimer({ contractAddress = CONTRACT_ADDRESS }: Tok
   const { address, isConnected } = useAccount();
   const [isMounted, setIsMounted] = useState(false);
   const [claimAmount, setClaimAmount] = useState('10');
+  const [isHumanVerified, setIsHumanVerified] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -82,6 +85,15 @@ export default function TokenClaimer({ contractAddress = CONTRACT_ADDRESS }: Tok
     }
   };
 
+  const handleVerificationSuccess = () => {
+    setIsHumanVerified(true);
+    setVerificationError(null);
+  };
+
+  const handleVerificationError = (error: string) => {
+    setVerificationError(error);
+  };
+
   useEffect(() => {
     if (isConfirmed) {
       refetchBalance();
@@ -110,7 +122,7 @@ export default function TokenClaimer({ contractAddress = CONTRACT_ADDRESS }: Tok
           Token Claimer
         </h1>
         <p className="text-gray-600 dark:text-gray-300">
-          Claim your free tokens once per wallet
+          Verify your humanity and claim your free tokens
         </p>
       </div>
 
@@ -135,6 +147,14 @@ export default function TokenClaimer({ contractAddress = CONTRACT_ADDRESS }: Tok
                     className="text-sm text-gray-500 dark:text-gray-400"
                   />
                 </div>
+                {/* Human verification status indicator */}
+                {isHumanVerified && (
+                  <div className="flex items-center text-green-600 dark:text-green-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                  </div>
+                )}
               </div>
             )}
           </Connect>
@@ -171,7 +191,16 @@ export default function TokenClaimer({ contractAddress = CONTRACT_ADDRESS }: Tok
             </p>
           </div>
 
-          {/* Claim Button */}
+          {/* Verification Error Display */}
+          {verificationError && (
+            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {verificationError}
+              </p>
+            </div>
+          )}
+
+          {/* Claim Button / Verification Flow */}
           <div className="space-y-4">
             {hasClaimed ? (
               <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -179,7 +208,14 @@ export default function TokenClaimer({ contractAddress = CONTRACT_ADDRESS }: Tok
                   ✅ You have already claimed your tokens!
                 </p>
               </div>
+            ) : !isHumanVerified ? (
+              /* Show Self Protocol verification if not verified */
+              <SelfVerification
+                onVerificationSuccess={handleVerificationSuccess}
+                onVerificationError={handleVerificationError}
+              />
             ) : (
+              /* Show claim button if verified */
               <Transaction
                 chainId={ALFAJORES_CHAIN_ID}
                 transaction={{
@@ -197,7 +233,7 @@ export default function TokenClaimer({ contractAddress = CONTRACT_ADDRESS }: Tok
                   console.error('Claim failed:', error);
                 }}
               >
-                <TransactionButton className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
+                <TransactionButton className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors">
                   Claim {formatClaimAmount(contractClaimAmount as bigint)} Tokens
                 </TransactionButton>
                 <TransactionStatus />
