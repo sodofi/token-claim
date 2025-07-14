@@ -28,7 +28,7 @@ export default function SimpleTokenClaimer({ contractAddress = CONTRACT_ADDRESS 
   const [isClaimLoading, setIsClaimLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  const { isVerified, isLoading: verificationLoading, verifyProof } = useHumanVerification();
+  const { isVerified, isLoading: verificationLoading, verifyProof, checkVerificationStatus } = useHumanVerification();
 
   useEffect(() => {
     setIsMounted(true);
@@ -88,13 +88,25 @@ export default function SimpleTokenClaimer({ contractAddress = CONTRACT_ADDRESS 
 
       const result = await response.json();
       if (result.result) {
-        // Refresh verification status
-        window.location.reload();
+        // Refresh verification status instead of reloading
+        await checkVerificationStatus(address);
+        setShowVerification(false);
       } else {
         setVerificationError(result.message || 'Test verification failed');
       }
     } catch (error) {
       setVerificationError('Test verification failed');
+    }
+  };
+
+  const handleSelfVerificationSuccess = async () => {
+    console.log("Self Protocol verification successful!");
+    setShowVerification(false);
+    setVerificationError(null);
+    
+    // Refresh verification status to update the UI
+    if (address) {
+      await checkVerificationStatus(address);
     }
   };
 
@@ -227,20 +239,20 @@ export default function SimpleTokenClaimer({ contractAddress = CONTRACT_ADDRESS 
                   className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
                 >
                   {verificationLoading ? (
-                    <>
+                    <div className="flex items-center justify-center space-x-2">
                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       <span>Checking...</span>
-                    </>
+                    </div>
                   ) : (
-                    <>
+                    <div className="flex items-center justify-center space-x-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span>Verify Humanity to Claim {formatClaimAmount(contractClaimAmount as bigint)} Tokens</span>
-                    </>
+                    </div>
                   )}
                 </button>
 
@@ -276,13 +288,11 @@ export default function SimpleTokenClaimer({ contractAddress = CONTRACT_ADDRESS 
                     <SelfQRcodeWrapper
                       selfApp={new SelfAppBuilder({
                         appName: "Token Claim App",
-                        scope: "my-app-scope",
-                        // IMPORTANT: Replace with your ngrok URL when testing locally
-                        // Example: https://abc123.ngrok.io/api/verify
-                        endpoint: `${window.location.origin}/api/verify`,
+                        scope: "token-claim-app",
+                        endpoint: `${window.location.origin}/api/verify?walletAddress=${encodeURIComponent(address || '')}`,
                         userId,
                         disclosures: {
-                          // Request passport information
+                          // Request passport information for humanity verification
                           name: true,
                           nationality: true,
                           date_of_birth: true,
@@ -293,13 +303,7 @@ export default function SimpleTokenClaimer({ contractAddress = CONTRACT_ADDRESS 
                           ofac: true,
                         },
                       }).build()}
-                      onSuccess={() => {
-                        console.log("Verification successful!");
-                        setShowVerification(false);
-                        setVerificationError(null);
-                        // Refresh the page to update verification status
-                        window.location.reload();
-                      }}
+                      onSuccess={handleSelfVerificationSuccess}
                       size={300}
                     />
                   </div>
@@ -322,15 +326,45 @@ export default function SimpleTokenClaimer({ contractAddress = CONTRACT_ADDRESS 
             </div>
           )}
 
+          {/* Verification Success Message */}
+          {isVerified && !hasClaimed && (
+            <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-center space-x-2 text-green-800 dark:text-green-200 mb-2">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="font-medium">✅ Humanity Verified!</span>
+              </div>
+              <p className="text-sm text-green-600 dark:text-green-400">
+                You can now claim your tokens below
+              </p>
+            </div>
+          )}
+
           {/* Claim Button - Only show if verified */}
           {isVerified && !hasClaimed && (
             <div className="space-y-4">
               <button
                 onClick={handleClaim}
                 disabled={isClaimLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
               >
-                {isClaimLoading ? 'Claiming...' : `Claim ${formatClaimAmount(contractClaimAmount as bigint)} Tokens`}
+                {isClaimLoading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Claiming...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                    <span>Claim {formatClaimAmount(contractClaimAmount as bigint)} Tokens</span>
+                  </div>
+                )}
               </button>
             </div>
           )}

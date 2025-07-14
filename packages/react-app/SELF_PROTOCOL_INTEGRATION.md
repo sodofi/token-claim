@@ -41,11 +41,12 @@ The application now requires users to verify their humanity using Self Protocol 
 1. **Connect Wallet**: User connects their wallet to the application
 2. **Verification Required**: If not verified, user sees verification requirement
 3. **Start Verification**: User clicks "Verify Humanity" button
-4. **QR Code Display**: Self Protocol QR code is displayed (placeholder in current implementation)
+4. **QR Code Display**: Self Protocol QR code is displayed with actual SelfQRcodeWrapper
 5. **Scan & Verify**: User scans QR code with Self app and completes verification
 6. **Proof Submission**: Self app submits proof to verification endpoint
 7. **Verification Success**: Backend validates proof and marks user as verified
-8. **Claim Tokens**: User can now claim tokens with the regular claim button
+8. **UI Updates**: Verification success message appears without page reload
+9. **Claim Tokens**: User can now claim tokens with the blue "Claim Tokens" button
 
 ## Self Protocol Configuration
 
@@ -73,22 +74,25 @@ This allows testing the verification flow without requiring the Self app.
 ## Implementation Status
 
 ### ✅ Completed
-- Backend verification endpoints
-- Verification state management
-- UI integration with verification flow
+- Backend verification endpoints with Self Protocol SDK
+- Verification state management without page reloads
+- UI integration with proper verification flow
 - Test verification for development
 - Identity card verification indicator
-
-### 🚧 In Progress
 - Self Protocol QR code component integration
-- Real-time verification status updates
+- Seamless transition from verification to token claiming
+
+### ✅ Fixed Issues
+- Removed page reload after verification success
+- Proper state management for verification status
+- Smooth user experience from verification to claiming
 
 ### 📋 TODO
-- Complete QR code component integration
 - Add proper error handling for verification failures
-- Implement verification status persistence
+- Implement verification status persistence across sessions
 - Add verification expiration logic
 - Production deployment configuration
+- Remove test verification button for production
 
 ## Dependencies
 

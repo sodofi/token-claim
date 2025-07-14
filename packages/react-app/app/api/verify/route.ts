@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SelfBackendVerifier, getUserIdentifier } from '@selfxyz/core';
-
-// In-memory storage for verified users (replace with database in production)
-const verifiedUsers = new Map<string, {
-  userId: string;
-  nullifier: string;
-  verifiedAt: Date;
-  credentialSubject: any;
-}>();
+import { verifiedUsers, addressToUserMapping, testVerifiedAddresses } from '../../../lib/verification-storage';
 
 export async function POST(request: NextRequest) {
   try {
     const { proof, publicSignals } = await request.json();
+    
+    // Extract wallet address from query parameter
+    const { searchParams } = new URL(request.url);
+    const walletAddress = searchParams.get('walletAddress') || undefined;
 
     console.log('Received verification request:', { 
       hasProof: !!proof, 
-      hasPublicSignals: !!publicSignals 
+      hasPublicSignals: !!publicSignals,
+      walletAddress 
     });
 
     if (!proof || !publicSignals) {
@@ -35,17 +33,16 @@ export async function POST(request: NextRequest) {
     console.log("Extracted userId:", userId);
 
     // Initialize and configure the verifier
-    // Following Self Protocol documentation pattern
     const selfBackendVerifier = new SelfBackendVerifier(
       'https://forno.celo.org',
-      'my-app-scope'
+      'token-claim-app' // Use consistent scope
     );
     
     // Configure verification options to match frontend
     selfBackendVerifier.setMinimumAge(18);
     selfBackendVerifier.excludeCountries(
-      "IRN",   // Iran - 3-letter ISO code
-      "PRK"    // North Korea - 3-letter ISO code
+      "IRN",   // Iran
+      "PRK"    // North Korea
     );
     selfBackendVerifier.enableNameAndDobOfacCheck();
 
@@ -60,17 +57,23 @@ export async function POST(request: NextRequest) {
       details: result.isValidDetails
     });
 
-    // Only check if the cryptographic proof is valid, ignore other checks
-    if (result.isValidDetails.isValidProof) {
-      // Store verification result
+    if (result.isValid && result.isValidDetails.isValidProof) {
+      // Store verification result with wallet address linkage
       verifiedUsers.set(userId, {
         userId: result.userId,
         nullifier: result.nullifier,
         verifiedAt: new Date(),
-        credentialSubject: result.credentialSubject
+        credentialSubject: result.credentialSubject,
+        walletAddress: walletAddress // Link to wallet address from query param
       });
 
-      console.log('Verification successful for user (proof valid):', userId);
+      // If wallet address is provided, create the mapping
+      if (walletAddress) {
+        addressToUserMapping.set(walletAddress.toLowerCase(), userId);
+        console.log('Linked wallet address to userId:', { walletAddress, userId });
+      }
+
+      console.log('Verification successful for user:', userId);
 
       // Return successful verification response
       return NextResponse.json({
@@ -81,20 +84,19 @@ export async function POST(request: NextRequest) {
         credentialSubject: result.credentialSubject
       });
     } else {
-      console.error('Cryptographic proof verification failed:', result.isValidDetails);
+      console.error('Verification failed:', result.isValidDetails);
       
       // Return failed verification response
       return NextResponse.json({
         status: 'error',
         result: false,
-        message: 'Cryptographic proof verification failed',
+        message: 'Verification failed',
         details: result.isValidDetails
       }, { status: 400 });
     }
   } catch (error) {
     console.error('Error verifying proof:', error);
     
-    // More detailed error logging
     if (error instanceof Error) {
       console.error('Error details:', {
         name: error.name,

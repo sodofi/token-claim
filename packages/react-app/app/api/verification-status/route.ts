@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Import the verifiedUsers map from the verify endpoint
-// In production, this would be a database query
-const verifiedUsers = new Map<string, {
-  userId: string;
-  nullifier: string;
-  verifiedAt: Date;
-  credentialSubject: any;
-}>();
+import { verifiedUsers, addressToUserMapping, testVerifiedAddresses } from '../../../lib/verification-storage';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,31 +19,21 @@ export async function GET(request: NextRequest) {
 
     console.log('Checking verification status for address:', address);
 
-    // In a real implementation, you would:
-    // 1. Query your database for verification records linked to this wallet address
-    // 2. Check if the user has completed Self Protocol verification
-    // For now, we'll check our in-memory storage and also provide a way to link wallet addresses
-
-    // Check if any verified user is associated with this wallet address
-    // This is a simplified approach - in production you'd have a proper user mapping
     let isVerified = false;
     let verificationData = null;
 
-    // For development, we'll also check a simple mapping
-    // In production, you'd store wallet address -> userId mapping in your database
-    const addressToUserMapping = new Map<string, string>();
-    
     // Check if this address has been mapped to a verified user
     const mappedUserId = addressToUserMapping.get(address.toLowerCase());
     if (mappedUserId && verifiedUsers.has(mappedUserId)) {
       isVerified = true;
       verificationData = verifiedUsers.get(mappedUserId);
+      console.log('Found verified user for address:', { address, userId: mappedUserId });
     }
 
-    // Also check our test verification storage
-    const testVerifiedAddresses = new Set<string>();
+    // Also check test verification storage for development
     if (testVerifiedAddresses.has(address.toLowerCase())) {
       isVerified = true;
+      console.log('Found test verification for address:', address);
     }
 
     console.log('Verification status result:', { address, isVerified });
@@ -88,15 +70,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Store the verification
+    console.log('Saving verification status:', { userId, walletAddress });
+
+    // Store the verification with wallet address
     verifiedUsers.set(userId, {
       userId,
       nullifier,
       verifiedAt: new Date(),
-      credentialSubject: {
-        // Populate this with actual credential subject data
-      }
+      credentialSubject: {},
+      walletAddress
     });
+
+    // Create the address mapping
+    addressToUserMapping.set(walletAddress.toLowerCase(), userId);
+
+    console.log('Verification status saved successfully');
 
     return NextResponse.json({
       status: 'success',
